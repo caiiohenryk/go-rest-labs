@@ -7,15 +7,23 @@ import (
 )
 
 func main() {
+	db, err := openDB()
+	if err != nil {
+		log.Fatalf("Database error: %v", err)
+	}
+	defer db.Close()
+
+	a := &api{store: NewProductStore(db)}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "ok")
 	})
-	mux.HandleFunc("POST /products", createProduct)
-	mux.HandleFunc("GET /products", listProducts)
-	mux.HandleFunc("GET /products/{id}", getProduct)
-	mux.HandleFunc("DELETE /products/{id}", deleteProduct)
-	mux.HandleFunc("PATCH /products/{id}", updateProduct)
+	mux.HandleFunc("POST /products", a.createProduct)
+	mux.HandleFunc("GET /products", a.listProducts)
+	mux.HandleFunc("GET /products/{id}", a.getProduct)
+	mux.HandleFunc("DELETE /products/{id}", a.deleteProduct)
+	mux.HandleFunc("PATCH /products/{id}", a.updateProduct)
 	srv := &http.Server{Addr: ":3000", Handler: withLogging(mux)}
 	log.Println("Listening on :3000")
 	srv.ListenAndServe()
